@@ -1,0 +1,54 @@
+#!/bin/bash
+# Script para generar un archivo Docker Compose con cantidad configurable de clientes
+# Uso: ./generar-compose.sh <archivo_salida> <cantidad_clientes>
+
+set -e
+
+OUTFILE="$1"
+NUM_CLIENTS="$2"
+
+if [[ -z "$OUTFILE" || -z "$NUM_CLIENTS" ]]; then
+	echo "Uso: $0 <archivo_salida> <cantidad_clientes>"
+	exit 1
+fi
+
+cat > "$OUTFILE" <<EOF
+name: tp0
+services:
+	server:
+		container_name: server
+		image: server:latest
+		entrypoint: python3 /main.py
+		environment:
+			- PYTHONUNBUFFERED=1
+			- LOGGING_LEVEL=DEBUG
+		networks:
+			- testing_net
+EOF
+
+# Generar clientes
+for i in $(seq 1 "$NUM_CLIENTS"); do
+	cat >> "$OUTFILE" <<EOF
+	client$i:
+		container_name: client$i
+		image: client:latest
+		entrypoint: /client
+		environment:
+			- CLI_ID=$i
+			- CLI_LOG_LEVEL=DEBUG
+		networks:
+			- testing_net
+		depends_on:
+			- server
+EOF
+done
+
+# Definir redes
+cat >> "$OUTFILE" <<EOF
+networks:
+	testing_net:
+		ipam:
+			driver: default
+			config:
+				- subnet: 172.25.125.0/24
+EOF
