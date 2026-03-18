@@ -8,7 +8,7 @@ OUTFILE="$1"
 NUM_CLIENTS="$2"
 
 if [[ -z "$OUTFILE" || -z "$NUM_CLIENTS" ]]; then
-	echo "Uso: $0 <archivo_salida> <cantidad_clientes>"
+	echo "Uso: $0 docker-compose-dev.yaml <cantidad_clientes>"
 	exit 1
 fi
 
@@ -52,3 +52,5 @@ networks:
 			config:
 				- subnet: 172.25.125.0/24
 EOF
+
+echo "compose en $OUTFILE generado con $NUM_CLIENTS clientes."
