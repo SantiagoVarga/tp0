@@ -65,7 +65,7 @@ services:
     depends_on:
       - server
 networks:
-testing_net:
+  testing_net:
     ipam:
       driver: default
       config:
