@@ -87,3 +87,17 @@ func (c *Client) StartClientLoop() {
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
+
+// CloseResources Graceful shutdown for client
+func (c *Client) CloseResources() {
+	log.Infof("Cerrando conexión del cliente...")
+	if c.conn != nil {
+		err := c.conn.Close()
+		if err != nil {
+			log.Errorf("Error al cerrar conexión: %v", err)
+		} else {
+			log.Infof("Conexión cerrada correctamente.")
+		}
+		c.conn = nil
+	}
+}

@@ -8,6 +8,7 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self._running = True
 
     def run(self):
         """
@@ -20,9 +21,18 @@ class Server:
 
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
-        while True:
+        while self._running:
             client_sock = self.__accept_new_connection()
             self.__handle_client_connection(client_sock)
+
+    def close_resources(self):
+        logging.info("Cerrando socket del servidor...")
+        try:
+            self._server_socket.close()
+            logging.info("Socket del servidor cerrado correctamente.")
+        except Exception as e:
+            logging.error(f"Error al cerrar socket del servidor: {e}")
+        self._running = False
 
     def __handle_client_connection(self, client_sock):
         """

@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/op/go-logging"
@@ -111,5 +113,18 @@ func main() {
 	}
 
 	client := common.NewClient(clientConfig)
+
+	// Graceful shutdown handler
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+		log.Infof("SIGTERM recibido, cerrando recursos...")
+		client.CloseResources()
+		log.Infof("Recursos cerrados. Terminando proceso.")
+		os.Exit(0)
+	}()
+
 	client.StartClientLoop()
 }

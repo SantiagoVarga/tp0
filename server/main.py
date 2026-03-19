@@ -1,3 +1,5 @@
+import signal
+import sys
 #!/usr/bin/env python3
 
 from configparser import ConfigParser
@@ -49,6 +51,14 @@ def main():
 
     # Initialize server and start server loop
     server = Server(port, listen_backlog)
+
+    def graceful_shutdown(signum, frame):
+        logging.info("SIGTERM recibido, cerrando recursos...")
+        server.close_resources()
+        logging.info("Recursos cerrados. Terminando proceso.")
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, graceful_shutdown)
     server.run()
 
 def initialize_log(logging_level):
