@@ -1,5 +1,9 @@
+
 import socket
 import logging
+import struct
+import json
+from .utils import Bet, store_bets
 
 
 class Server:
@@ -23,6 +27,7 @@ class Server:
         # the server
         while self._running:
             client_sock = self.__accept_new_connection()
+            addr = client_sock.getpeername()
             self.__handle_client_connection(client_sock)
 
     def close_resources(self):
@@ -36,22 +41,60 @@ class Server:
 
     def __handle_client_connection(self, client_sock):
         """
-        Read message from a specific client socket and closes the socket
-
-        If a problem arises in the communication with the client, the
-        client socket will also be closed
+        Recibe una apuesta serializada, la procesa y responde al cliente.
+        Evita short-read/write usando prefijo de longitud.
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
-            addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
-        except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            raw_len = self._recv_all(client_sock, 4)
+            if not raw_len:
+                raise Exception("No se pudo leer la longitud del mensaje")
+            msg_len = struct.unpack('>I', raw_len)[0]
+            msg_bytes = self._recv_all(client_sock, msg_len)
+            msg = msg_bytes.decode('utf-8')
+            status, dni, numero = self.process_bet(msg)
+            if status == "success":
+                response = json.dumps({"status": "ok"}).encode('utf-8')
+            else:
+                response = json.dumps({"status": "fail"}).encode('utf-8')
+            client_sock.sendall(struct.pack('>I', len(response)) + response)
+        except Exception as e:
+            logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
+
+    def process_bet(self, message):
+        """
+        Procesa el mensaje de apuesta, crea el objeto Bet y almacena la apuesta.
+        El mensaje debe tener los campos separados por '/': agencia/nombre/apellido/documento/nacimiento/numero
+        Devuelve status, dni y numero para logging y respuesta.
+        """
+        try:
+            parts = message.split('/')
+            if len(parts) != 6:
+                raise ValueError("Formato de apuesta inválido")
+            bet = Bet(
+                agency=parts[0],
+                first_name=parts[1],
+                last_name=parts[2],
+                document=parts[3],
+                birthdate=parts[4],
+                number=parts[5]
+            )
+            store_bets([bet])
+            logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
+            return "success", bet.document, bet.number
+        except Exception as e:
+            logging.error(f"action: apuesta_almacenada | result: fail | error: {e}")
+            return "fail", None, None
+
+    def _recv_all(self, sock, n):
+        data = b''
+        while len(data) < n:
+            packet = sock.recv(n - len(data))
+            if not packet:
+                return None
+            data += packet
+        return data
 
     def __accept_new_connection(self):
         """
