@@ -140,8 +140,7 @@ func (c *ClientProtocolMessage) SerializeBatch(bets []BetInfo) string {
 // SendBatch envía un batch de apuestas al servidor
 func (c *ClientProtocolMessage) SendBatch(bets []BetInfo) (string, error) {
 	message := c.SerializeBatch(bets)
-	err := c.sendAll([]byte(message))
-	if err != nil {
+	if err := c.sendMessage(message); err != nil {
 		return "", err
 	}
 

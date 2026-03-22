@@ -47,28 +47,52 @@ func (c *Client) createClientSocket() error {
 			c.config.ID,
 			err,
 		)
+		return err
 	}
 	c.conn = conn
+	c.protocol = NewClientProtocolMessage(c.conn, c.config.ID)
 	return nil
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
-	batchIndex := 0
+	if err := c.createClientSocket(); err != nil {
+		return
+	}
+	defer c.CloseResources()
 
-	for batchIndex < len(c.Bets) {
-		end := batchIndex + c.BatchConfig.MaxAmount
-		if end > len(c.Bets) {
-			end = len(c.Bets)
+	maxOnWireBytes := c.BatchConfig.MaxAmount
+	if maxOnWireBytes <= 0 {
+		maxOnWireBytes = 8 * 1024
+	}
+	maxPayloadBytes := maxOnWireBytes - 4
+	if maxPayloadBytes <= 0 {
+		maxPayloadBytes = maxOnWireBytes
+	}
+
+	batchStart := 0
+	for batchStart < len(c.Bets) {
+		batchEnd := batchStart
+		var batch []BetInfo
+		for batchEnd < len(c.Bets) {
+			candidate := append(batch, c.Bets[batchEnd])
+			payload := c.protocol.SerializeBatch(candidate)
+			if len(payload) > maxPayloadBytes {
+				if len(batch) == 0 {
+					batch = candidate
+					batchEnd++
+				}
+				break
+			}
+			batch = candidate
+			batchEnd++
 		}
 
-		batch := c.Bets[batchIndex:end]
-		batchSize := end - batchIndex
-
+		batchSize := len(batch)
 		response, err := c.protocol.SendBatch(batch)
 		if err != nil {
 			log.Errorf("action: apuesta_enviada | result: fail | cantidad: %d | error: %v", batchSize, err)
-			batchIndex = end
+			batchStart = batchEnd
 			continue
 		}
 
@@ -78,7 +102,7 @@ func (c *Client) StartClientLoop() {
 			log.Errorf("action: apuesta_enviada | result: fail | cantidad: %d", batchSize)
 		}
 
-		batchIndex = end
+		batchStart = batchEnd
 		time.Sleep(c.config.LoopPeriod)
 	}
 }

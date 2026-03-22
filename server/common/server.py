@@ -25,24 +25,28 @@ class Server:
 
     def __handle_client_connection(self, client_sock):
         try:
-            raw_len = self._recv_all(client_sock, 4)
-            if not raw_len:
-                raise RuntimeError("client disconnected before length")
+            while True:
+                raw_len = self._recv_all(client_sock, 4)
+                if not raw_len:
+                    return
 
-            msg_len = struct.unpack(">I", raw_len)[0]
-            msg = self._recv_all(client_sock, msg_len).decode("utf-8")
+                msg_len = struct.unpack(">I", raw_len)[0]
+                msg = self._recv_all(client_sock, msg_len).decode("utf-8")
 
-            if msg.startswith("BET/BATCH/"):
-                response, cantidad, ok = self.process_batch(msg)
-                logging.info(
-                    f"action: apuesta_recibida | result: {'success' if ok else 'fail'} | cantidad: {cantidad}"
-                )
-            else:
-                # individual bet (optional for ej6, but keeps compatibility)
-                response, _dni, _num, ok = self.process_bet(msg)
+                if msg.startswith("BET/BATCH/"):
+                    response, cantidad, ok = self.process_batch(msg)
+                    logging.info(
+                        f"action: apuesta_recibida | result: {'success' if ok else 'fail'} | cantidad: {cantidad}"
+                    )
+                else:
+                    # individual bet (optional for ej6, but keeps compatibility)
+                    response, _dni, _num, ok = self.process_bet(msg)
+                    logging.info(
+                        f"action: apuesta_recibida | result: {'success' if ok else 'fail'} | cantidad: 1"
+                    )
 
-            response_bytes = response.encode("utf-8")
-            client_sock.sendall(struct.pack(">I", len(response_bytes)) + response_bytes)
+                response_bytes = response.encode("utf-8")
+                client_sock.sendall(struct.pack(">I", len(response_bytes)) + response_bytes)
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
