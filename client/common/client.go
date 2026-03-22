@@ -118,8 +118,8 @@ func (c *Client) CloseResources() {
 
 func (c *Client) handleServerResponse(response *ServerResponse) {
 	if response.Status == "SUCCESS" {
-		log.Infof("action: apuesta_enviada | result: success | dni: %s | numero: %s", c.BetInfo.DNI, c.BetInfo.number)
+		log.Infof("action: apuesta_enviada | result: success | dni: %s | numero: %s", c.BetInfo.DNI, c.BetInfo.Number)
 	} else {
-		log.Errorf("action: apuesta_enviada | result: fail | dni: %s | numero: %s | error: %s", c.BetInfo.DNI, c.BetInfo.number, response.Message)
+		log.Errorf("action: apuesta_enviada | result: fail | dni: %s | numero: %s | error: %s", c.BetInfo.DNI, c.BetInfo.Number, response.Message)
 	}
 }

@@ -11,7 +11,7 @@ type BetInfo struct {
 	Surname  string
 	DNI      string
 	Birthday string
-	number   string
+	Number   string
 }
 
 type ServerResponse struct {
@@ -20,7 +20,7 @@ type ServerResponse struct {
 	Message string
 }
 
-func loadBetInfo(clientID string) (BetInfo, error) {
+func LoadBetInfo(clientID string) (BetInfo, error) {
 	var betInfo BetInfo
 
 	betInfo.Agency = clientID
@@ -32,7 +32,7 @@ func loadBetInfo(clientID string) (BetInfo, error) {
 	if number == "" {
 		return betInfo, fmt.Errorf("NUMBER environment variable is not set")
 	}
-	betInfo.number = number
+	betInfo.Number = number
 
 	if betInfo.Name == "" || betInfo.Surname == "" || betInfo.DNI == "" || betInfo.Birthday == "" {
 		return betInfo, fmt.Errorf("One or more required environment variables (NAME, SURNAME, DNI, BIRTHDAY) are not set")

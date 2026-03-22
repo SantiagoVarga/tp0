@@ -52,7 +52,7 @@ func (c *ClientProtocolMessage) sendMessage(message string) error {
 
 func (c *ClientProtocolMessage) createBetMessage(betInfo BetInfo) string {
 	// Prefijo BET y campos separados por /
-	return fmt.Sprintf("BET/%s/%s/%s/%s/%s/%s", betInfo.Agency, betInfo.Name, betInfo.Surname, betInfo.DNI, betInfo.Birthday, betInfo.number)
+	return fmt.Sprintf("BET/%s/%s/%s/%s/%s/%s", betInfo.Agency, betInfo.Name, betInfo.Surname, betInfo.DNI, betInfo.Birthday, betInfo.Number)
 }
 
 func (c *ClientProtocolMessage) sendBet(betInfo BetInfo) (*ServerResponse, error) {

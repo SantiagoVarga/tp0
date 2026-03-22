@@ -114,6 +114,12 @@ func main() {
 
 	client := common.NewClient(clientConfig)
 
+	betInfo, err := common.LoadBetInfo(v.GetString("id"))
+	if err != nil {
+		log.Criticalf("%s", err)
+	}
+	client.BetInfo = betInfo
+
 	// Graceful shutdown handler
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM)
