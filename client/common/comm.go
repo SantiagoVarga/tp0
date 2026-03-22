@@ -95,19 +95,22 @@ func (c *ClientProtocolMessage) receiveMessage() (string, error) {
 }
 
 func (c *ClientProtocolMessage) reponseFromServer(response string) (*ServerResponse, error) {
-	// Espera un JSON tipo {"status": "ok"} o {"status": "fail"}
-	status := ""
-	message := ""
-	if strings.Contains(response, "ok") {
+	// Espera un string tipo RESPONSE/SUCCESS/Apuesta almacenada o RESPONSE/FAIL/Error al almacenar apuesta
+	parts := strings.SplitN(response, "/", 3)
+	if len(parts) != 3 {
+		return &ServerResponse{
+			Type:    "RESPONSE",
+			Status:  "FAIL",
+			Message: "Formato de respuesta inválido",
+		}, nil
+	}
+	status := "FAIL"
+	if parts[1] == "SUCCESS" {
 		status = "SUCCESS"
-		message = "Apuesta almacenada"
-	} else {
-		status = "FAIL"
-		message = "Error al almacenar apuesta"
 	}
 	return &ServerResponse{
-		Type:    "RESPONSE",
+		Type:    parts[0],
 		Status:  status,
-		Message: message,
+		Message: parts[2],
 	}, nil
 }
