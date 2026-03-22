@@ -49,7 +49,7 @@ for i in $(seq 1 "$NUM_CLIENTS"); do
             - server
         volumes:
             - ./client/config.yaml:/config.yaml
-            - ${PWD}/.data/dataset/agency-$i.csv:${PWD}/.data/dataset/agency-$i.csv
+            - ${PWD}/.data/agency-$i.csv:${PWD}/.data/agency-$i.csv
 EOF
 done
 
