@@ -1,16 +1,12 @@
 package common
 
 import (
-	"bufio"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
 	"strings"
-
-	"github.com/op/go-logging"
 )
-
-var protocolLog = logging.MustGetLogger("log")
 
 type ClientProtocolMessage struct {
 	conn net.Conn
@@ -38,28 +34,25 @@ func (c *ClientProtocolMessage) sendMessage(message string) error {
 		return fmt.Errorf("Connection failed")
 	}
 	msglen := len(message)
-	msgsize := uint16(msglen)
-	sizeBufffer := make([]byte, 2)
-	binary.BigEndian.PutUint16(sizeBufffer, msgsize)
+	sizeBuffer := make([]byte, 4)
+	binary.BigEndian.PutUint32(sizeBuffer, uint32(msglen))
 
-	if err := c.sendAll(sizeBufffer); err != nil {
-		log.Errorf(
-			"action: send_message | result: fail | error: %v")
+	if err := c.sendAll(sizeBuffer); err != nil {
+		log.Errorf("action: send_message | result: fail | error: %v", err)
 		return err
 	}
 
 	if err := c.sendAll([]byte(message)); err != nil {
-		log.Errorf(
-			"action: send_message | result: fail | error: %v")
+		log.Errorf("action: send_message | result: fail | error: %v", err)
 		return err
 	}
 
 	return nil
-
 }
 
 func (c *ClientProtocolMessage) createBetMessage(betInfo BetInfo) string {
-	return fmt.Sprintf("BET/%s/%s/%s/%s/%s/%s\n", betInfo.Agency, betInfo.Name, betInfo.Surname, betInfo.DNI, betInfo.Birthday, betInfo.number)
+	// Prefijo BET y campos separados por /
+	return fmt.Sprintf("BET/%s/%s/%s/%s/%s/%s", betInfo.Agency, betInfo.Name, betInfo.Surname, betInfo.DNI, betInfo.Birthday, betInfo.number)
 }
 
 func (c *ClientProtocolMessage) sendBet(betInfo BetInfo) (*ServerResponse, error) {
@@ -87,35 +80,34 @@ func (c *ClientProtocolMessage) receiveMessage() (string, error) {
 	if c.conn == nil {
 		return "", fmt.Errorf("Connection failed")
 	}
-
-	reader := bufio.NewReader(c.conn)
-	var message []byte
-
-	for {
-		b, err := reader.ReadByte()
-		if err != nil {
-			return "", err
-		}
-
-		if b == '\n' {
-			return strings.TrimSpace(string(message)), nil
-		}
-
-		message = append(message, b)
+	// Leer 4 bytes de longitud
+	sizeBuffer := make([]byte, 4)
+	if _, err := io.ReadFull(c.conn, sizeBuffer); err != nil {
+		return "", fmt.Errorf("Failed to read response size: %v", err)
 	}
+	msglen := binary.BigEndian.Uint32(sizeBuffer)
+	// Leer el mensaje completo
+	msgBuffer := make([]byte, msglen)
+	if _, err := io.ReadFull(c.conn, msgBuffer); err != nil {
+		return "", fmt.Errorf("Failed to read response body: %v", err)
+	}
+	return string(msgBuffer), nil
 }
 
 func (c *ClientProtocolMessage) reponseFromServer(response string) (*ServerResponse, error) {
-	parts := strings.Split(response, "/")
-	if len(parts) < 3 {
-		return nil, fmt.Errorf("Invalid server response format")
-	}
-	if parts[0] != "RESPONSE" {
-		return nil, fmt.Errorf("Invalid server response type: %s", parts[0])
+	// Espera un JSON tipo {"status": "ok"} o {"status": "fail"}
+	status := ""
+	message := ""
+	if strings.Contains(response, "ok") {
+		status = "SUCCESS"
+		message = "Apuesta almacenada"
+	} else {
+		status = "FAIL"
+		message = "Error al almacenar apuesta"
 	}
 	return &ServerResponse{
-		Type:    parts[0],
-		Status:  parts[1],
-		Message: parts[2],
+		Type:    "RESPONSE",
+		Status:  status,
+		Message: message,
 	}, nil
 }

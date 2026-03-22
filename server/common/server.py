@@ -53,10 +53,11 @@ class Server:
             msg = msg_bytes.decode('utf-8')
             status, dni, numero = self.process_bet(msg)
             if status == "success":
-                response = json.dumps({"status": "ok"}).encode('utf-8')
+                response = f"RESPONSE/SUCCESS/Apuesta almacenada"
             else:
-                response = json.dumps({"status": "fail"}).encode('utf-8')
-            client_sock.sendall(struct.pack('>I', len(response)) + response)
+                response = f"RESPONSE/FAIL/Error al almacenar apuesta"
+            response_bytes = response.encode('utf-8')
+            client_sock.sendall(struct.pack('>I', len(response_bytes)) + response_bytes)
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
