@@ -71,15 +71,15 @@ class Server:
         """
         try:
             parts = message.split('/')
-            if len(parts) != 6:
+            if len(parts) != 7 or parts[0] != "BET":
                 raise ValueError("Formato de apuesta inválido")
             bet = Bet(
-                agency=parts[0],
-                first_name=parts[1],
-                last_name=parts[2],
-                document=parts[3],
-                birthdate=parts[4],
-                number=parts[5]
+                agency=parts[1],
+                first_name=parts[2],
+                last_name=parts[3],
+                document=parts[4],
+                birthdate=parts[5],
+                number=parts[6]
             )
             store_bets([bet])
             logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
