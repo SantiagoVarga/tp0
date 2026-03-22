@@ -18,6 +18,10 @@ func NewClientProtocolMessage(conn net.Conn, id string) ClientProtocolMessage {
 }
 
 func (c *ClientProtocolMessage) sendAll(message []byte) error {
+	if c.conn == nil {
+		return fmt.Errorf("nil connection")
+	}
+
 	totalSent := 0
 	for totalSent < len(message) {
 		n, err := c.conn.Write(message[totalSent:])
@@ -27,6 +31,15 @@ func (c *ClientProtocolMessage) sendAll(message []byte) error {
 		totalSent += n
 	}
 	return nil
+}
+
+func (p *ClientProtocolMessage) recvAll(n int) ([]byte, error) {
+	if p.conn == nil {
+		return nil, fmt.Errorf("nil connection")
+	}
+	buf := make([]byte, n)
+	_, err := io.ReadFull(p.conn, buf)
+	return buf, err
 }
 
 func (c *ClientProtocolMessage) sendMessage(message string) error {
