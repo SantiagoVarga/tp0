@@ -114,3 +114,28 @@ func (c *ClientProtocolMessage) reponseFromServer(response string) (*ServerRespo
 		Message: parts[2],
 	}, nil
 }
+
+// SerializeBatch serializa un batch de apuestas con prefijo BET/BATCH
+func (c *ClientProtocolMessage) SerializeBatch(bets []BetInfo) string {
+	message := fmt.Sprintf("BET/BATCH/%d", len(bets))
+	for _, bet := range bets {
+		message += fmt.Sprintf("/%s/%s/%s/%s/%s/%s", bet.Agency, bet.Name, bet.Surname, bet.DNI, bet.Birthday, bet.Number)
+	}
+	return message
+}
+
+// SendBatch envía un batch de apuestas al servidor
+func (c *ClientProtocolMessage) SendBatch(bets []BetInfo) (string, error) {
+	message := c.SerializeBatch(bets)
+	err := c.sendAll([]byte(message))
+	if err != nil {
+		return "", err
+	}
+
+	response, err := c.receiveMessage()
+	if err != nil {
+		return "", err
+	}
+
+	return response, nil
+}

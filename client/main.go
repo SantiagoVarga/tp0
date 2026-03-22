@@ -114,11 +114,24 @@ func main() {
 
 	client := common.NewClient(clientConfig)
 
-	betInfo, err := common.LoadBetInfo(v.GetString("id"))
+	/*betInfo, err := common.LoadBetInfo(v.GetString("id"))
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
-	client.BetInfo = betInfo
+	client.BetInfo = betInfo*/
+
+	// Cargar apuestas desde archivo CSV
+	bets, err := common.LoadBetsFromFile(clientConfig.ID, fmt.Sprintf(".data/agency-%s.csv", clientConfig.ID))
+	if err != nil {
+		log.Criticalf("Error cargando archivo de apuestas: %v", err)
+	}
+	client.Bets = bets
+
+	// Cargar configuración de batch desde config.yaml
+	batchConfig := common.BatchConfig{
+		MaxAmount: v.GetInt("batch.maxAmount"),
+	}
+	client.BatchConfig = batchConfig
 
 	// Graceful shutdown handler
 	sigs := make(chan os.Signal, 1)

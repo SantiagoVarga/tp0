@@ -2,6 +2,7 @@ package common
 
 import (
 	"net"
+	"strings"
 	"time"
 
 	"github.com/op/go-logging"
@@ -19,10 +20,11 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config   ClientConfig
-	conn     net.Conn
-	BetInfo  BetInfo
-	protocol ClientProtocolMessage
+	config      ClientConfig
+	conn        net.Conn
+	Bets        []BetInfo
+	protocol    ClientProtocolMessage
+	BatchConfig BatchConfig
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -52,41 +54,33 @@ func (c *Client) createClientSocket() error {
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
+	batchIndex := 0
 
-		c.protocol = NewClientProtocolMessage(c.conn, c.config.ID)
-
-		response, err := c.protocol.sendBet(c.BetInfo)
-
-		if err != nil {
-			log.Errorf("action: send_bet | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
+	for batchIndex < len(c.Bets) {
+		end := batchIndex + c.BatchConfig.MaxAmount
+		if end > len(c.Bets) {
+			end = len(c.Bets)
 		}
 
-		c.handleServerResponse(response)
+		batch := c.Bets[batchIndex:end]
+		batchSize := end - batchIndex
 
-		c.conn.Close()
-
+		response, err := c.protocol.SendBatch(batch)
 		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
+			log.Errorf("action: apuesta_enviada | result: fail | cantidad: %d | error: %v", batchSize, err)
+			batchIndex = end
+			continue
 		}
 
-		// Wait a time between sending one message and the next one
+		if c.handleServerResponse(response, batchSize) {
+			log.Infof("action: apuesta_enviada | result: success | cantidad: %d", batchSize)
+		} else {
+			log.Errorf("action: apuesta_enviada | result: fail | cantidad: %d", batchSize)
+		}
+
+		batchIndex = end
 		time.Sleep(c.config.LoopPeriod)
-
 	}
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
 // CloseResources Graceful shutdown for client
@@ -103,10 +97,18 @@ func (c *Client) CloseResources() {
 	}
 }
 
-func (c *Client) handleServerResponse(response *ServerResponse) {
-	if response.Status == "SUCCESS" {
-		log.Infof("action: apuesta_enviada | result: success | dni: %s | numero: %s", c.BetInfo.DNI, c.BetInfo.Number)
-	} else {
-		log.Errorf("action: apuesta_enviada | result: fail | dni: %s | numero: %s | error: %s", c.BetInfo.DNI, c.BetInfo.Number, response.Message)
+func (c *Client) handleServerResponse(response string, batchSize int) bool {
+	parts := strings.SplitN(response, "/", 3)
+	if len(parts) < 3 {
+		return false
 	}
+
+	prefix := parts[0]
+	status := parts[1]
+
+	if prefix == "RESPONSE" && status == "SUCCESS" {
+		return true
+	}
+
+	return false
 }
