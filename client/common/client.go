@@ -61,38 +61,22 @@ func (c *Client) StartClientLoop() {
 	}
 	defer c.CloseResources()
 
-	maxOnWireBytes := c.BatchConfig.MaxAmount
-	if maxOnWireBytes <= 0 {
-		maxOnWireBytes = 8 * 1024
-	}
-	maxPayloadBytes := maxOnWireBytes - 4
-	if maxPayloadBytes <= 0 {
-		maxPayloadBytes = maxOnWireBytes
+	maxBetsPerBatch := c.BatchConfig.MaxAmount
+	if maxBetsPerBatch <= 0 {
+		maxBetsPerBatch = 99
 	}
 
-	batchStart := 0
-	for batchStart < len(c.Bets) {
-		batchEnd := batchStart
-		var batch []BetInfo
-		for batchEnd < len(c.Bets) {
-			candidate := append(batch, c.Bets[batchEnd])
-			payload := c.protocol.SerializeBatch(candidate)
-			if len(payload) > maxPayloadBytes {
-				if len(batch) == 0 {
-					batch = candidate
-					batchEnd++
-				}
-				break
-			}
-			batch = candidate
-			batchEnd++
+	for batchStart := 0; batchStart < len(c.Bets); batchStart += maxBetsPerBatch {
+		batchEnd := batchStart + maxBetsPerBatch
+		if batchEnd > len(c.Bets) {
+			batchEnd = len(c.Bets)
 		}
 
+		batch := c.Bets[batchStart:batchEnd]
 		batchSize := len(batch)
 		response, err := c.protocol.SendBatch(batch)
 		if err != nil {
 			log.Errorf("action: apuesta_enviada | result: fail | cantidad: %d | error: %v", batchSize, err)
-			batchStart = batchEnd
 			continue
 		}
 
@@ -102,7 +86,6 @@ func (c *Client) StartClientLoop() {
 			log.Errorf("action: apuesta_enviada | result: fail | cantidad: %d", batchSize)
 		}
 
-		batchStart = batchEnd
 		time.Sleep(c.config.LoopPeriod)
 	}
 }
