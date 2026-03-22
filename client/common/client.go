@@ -72,14 +72,6 @@ func (c *Client) StartClientLoop() {
 
 		c.handleServerResponse(response)
 
-		// TODO: Modify the send to avoid short-write
-		/*fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v\n",
-			c.config.ID,
-			msgID,
-		)
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')*/
 		c.conn.Close()
 
 		if err != nil {
@@ -89,11 +81,6 @@ func (c *Client) StartClientLoop() {
 			)
 			return
 		}
-
-		/*log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
-		)*/
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
