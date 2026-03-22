@@ -121,7 +121,7 @@ func main() {
 	client.BetInfo = betInfo*/
 
 	// Cargar apuestas desde archivo CSV
-	bets, err := common.LoadBetsFromFile(clientConfig.ID, fmt.Sprintf("agency-%s.csv", clientConfig.ID))
+	bets, err := common.LoadBetsFromFile(clientConfig.ID, fmt.Sprintf(".../.data/agency-%s.csv", clientConfig.ID))
 	if err != nil {
 		log.Criticalf("Error cargando archivo de apuestas: %v", err)
 	}
