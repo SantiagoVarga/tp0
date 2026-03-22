@@ -38,11 +38,11 @@ for i in $(seq 1 "$NUM_CLIENTS"); do
         entrypoint: /client
         environment:
             - CLI_ID=$i
-            - NAME =name$i
-            - SURNAME =surname$i
-            - DNI =$((1000 + i))
-            - BIRTHDAY =1990-01-01
-            - NUMBER = $((100 + i))
+            - NAME=name$i
+            - SURNAME=surname$i
+            - DNI=$((1000 + i))
+            - BIRTHDAY=1990-01-01
+            - NUMBER=$((100 + i))
         networks:
             - testing_net 
         depends_on:

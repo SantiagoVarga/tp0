@@ -16,6 +16,11 @@ services:
         entrypoint: /client
         environment:
             - CLI_ID=1
+            - NAME=name1
+            - SURNAME=surname1
+            - DNI=1001
+            - BIRTHDAY=1990-01-01
+            - NUMBER=101
         networks:
             - testing_net 
         depends_on:
