@@ -88,6 +88,20 @@ func (c *Client) StartClientLoop() {
 
 		time.Sleep(c.config.LoopPeriod)
 	}
+
+	for {
+		wr, err := c.protocol.RequestWinners(c.config.ID)
+		if err != nil {
+			log.Errorf("action: consulta_ganadores | result: fail | error: %v", err)
+			return
+		}
+		if !wr.Ready {
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+		log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", wr.Count)
+		return
+	}
 }
 
 // CloseResources Graceful shutdown for client

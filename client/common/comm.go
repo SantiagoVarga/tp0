@@ -5,12 +5,19 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
 	"strings"
 )
 
 type ClientProtocolMessage struct {
 	conn net.Conn
 	id   string
+}
+
+type WinnersResponse struct {
+	Ready bool
+	Count int
+	DNIs  []string
 }
 
 func NewClientProtocolMessage(conn net.Conn, id string) ClientProtocolMessage {
@@ -150,4 +157,44 @@ func (c *ClientProtocolMessage) SendBatch(bets []BetInfo) (string, error) {
 	}
 
 	return response, nil
+}
+
+func (c *ClientProtocolMessage) NotifyDone(agencyID string) (string, error) {
+	if err := c.sendMessage(fmt.Sprintf("DONE/%s", agencyID)); err != nil {
+		return "", err
+	}
+	return c.receiveMessage()
+}
+
+func (c *ClientProtocolMessage) RequestWinners(agencyID string) (WinnersResponse, error) {
+	if err := c.sendMessage(fmt.Sprintf("WINNERS/%s", agencyID)); err != nil {
+		return WinnersResponse{}, err
+	}
+
+	resp, err := c.receiveMessage()
+	if err != nil {
+		return WinnersResponse{}, err
+	}
+
+	parts := strings.Split(resp, "/")
+
+	// RESPONSE/NOT_READY/WINNERS
+	if len(parts) == 3 && parts[0] == "RESPONSE" && parts[1] == "NOT_READY" && parts[2] == "WINNERS" {
+		return WinnersResponse{Ready: false}, nil
+	}
+
+	// RESPONSE/SUCCESS/WINNERS/{cant}/{dni...}
+	if len(parts) >= 4 && parts[0] == "RESPONSE" && parts[1] == "SUCCESS" && parts[2] == "WINNERS" {
+		count, convErr := strconv.Atoi(parts[3])
+		if convErr != nil {
+			return WinnersResponse{}, convErr
+		}
+		dnis := []string{}
+		if len(parts) > 4 {
+			dnis = parts[4:]
+		}
+		return WinnersResponse{Ready: true, Count: count, DNIs: dnis}, nil
+	}
+
+	return WinnersResponse{}, fmt.Errorf("unexpected response: %s", resp)
 }

@@ -12,6 +12,16 @@ class Server:
         self._server_socket.bind(("", port))
         self._server_socket.listen(listen_backlog)
 
+        self._required_agencies = int(os.getenv("AGENCIES_COUNT", "0"))
+        if self._required_agencies <= 0:
+            logging.warning("action: config | result: fail | error: AGENCIES_COUNT missing/invalid")
+
+        # Estado del sorteo (secuencial)
+        self._done_agencies = set()
+        self._draw_done = False
+        self._winners_by_agency = {}
+
+
     def run(self):
         while True:
             client_sock = self.__accept_new_connection()
@@ -38,8 +48,13 @@ class Server:
                     logging.info(
                         f"action: apuesta_recibida | result: {'success' if ok else 'fail'} | cantidad: {cantidad}"
                     )
+                 elif msg.startswith("DONE/"):
+                    response = self.process_done(msg)
+
+                elif msg.startswith("WINNERS/"):
+                    response = self.process_winners(msg)
+
                 else:
-                    # individual bet (optional for ej6, but keeps compatibility)
                     response, _dni, _num, ok = self.process_bet(msg)
                     logging.info(
                         f"action: apuesta_recibida | result: {'success' if ok else 'fail'} | cantidad: 1"
@@ -54,6 +69,50 @@ class Server:
                 client_sock.close()
             except Exception:
                 pass
+
+    def process_done(self, message: str) -> str:
+        # DONE/{agencyId}
+        parts = message.split("/")
+        if len(parts) != 2:
+            return "RESPONSE/FAIL/DONE"
+
+        agency_id = parts[1]
+        self._done_agencies.add(agency_id)
+
+        # Ejecuta sorteo SOLO cuando llegaron todas las DONE esperadas
+        if (
+            (not self._draw_done)
+            and (self._required_agencies > 0)
+            and (len(self._done_agencies) >= self._required_agencies)
+        ):
+            winners = {}
+            for bet in load_bets():
+                if has_won(bet):
+                    key = str(bet.agency)
+                    winners.setdefault(key, []).append(str(bet.document))
+
+            self._winners_by_agency = winners
+            self._draw_done = True
+            logging.info("action: sorteo | result: success")
+
+        return "RESPONSE/SUCCESS/DONE"
+
+    def process_winners(self, message: str) -> str:
+        # WINNERS/{agencyId}
+        parts = message.split("/")
+        if len(parts) != 2:
+            return "RESPONSE/FAIL/WINNERS"
+
+        agency_id = parts[1]
+
+        if not self._draw_done:
+            return "RESPONSE/NOT_READY/WINNERS"
+
+        dnis = self._winners_by_agency.get(agency_id, [])
+        resp = f"RESPONSE/SUCCESS/WINNERS/{len(dnis)}"
+        for dni in dnis:
+            resp += f"/{dni}"
+        return resp 
 
     def process_bet(self, message: str):
         """
