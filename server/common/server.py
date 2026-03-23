@@ -48,7 +48,7 @@ class Server:
                     logging.info(
                         f"action: apuesta_recibida | result: {'success' if ok else 'fail'} | cantidad: {cantidad}"
                     )
-                 elif msg.startswith("DONE/"):
+                elif msg.startswith("DONE/"):
                     response = self.process_done(msg)
 
                 elif msg.startswith("WINNERS/"):

@@ -18,7 +18,7 @@ services:
         entrypoint: /client
         environment:
             - CLI_ID=1
-            - CLI_SERVER_IP=172.25.125.2:12345
+            - CLI_SERVER_ADDRESS=172.25.125.2:12345
             - NAME=name1
             - SURNAME=surname1
             - DNI=1001
@@ -37,7 +37,7 @@ services:
         entrypoint: /client
         environment:
             - CLI_ID=2
-            - CLI_SERVER_IP=172.25.125.2:12345
+            - CLI_SERVER_ADDRESS=172.25.125.2:12345
             - NAME=name2
             - SURNAME=surname2
             - DNI=1002
@@ -56,7 +56,7 @@ services:
         entrypoint: /client
         environment:
             - CLI_ID=3
-            - CLI_SERVER_IP=172.25.125.2:12345
+            - CLI_SERVER_ADDRESS=172.25.125.2:12345
             - NAME=name3
             - SURNAME=surname3
             - DNI=1003
@@ -75,7 +75,7 @@ services:
         entrypoint: /client
         environment:
             - CLI_ID=4
-            - CLI_SERVER_IP=172.25.125.2:12345
+            - CLI_SERVER_ADDRESS=172.25.125.2:12345
             - NAME=name4
             - SURNAME=surname4
             - DNI=1004
@@ -94,7 +94,7 @@ services:
         entrypoint: /client
         environment:
             - CLI_ID=5
-            - CLI_SERVER_IP=172.25.125.2:12345
+            - CLI_SERVER_ADDRESS=172.25.125.2:12345
             - NAME=name5
             - SURNAME=surname5
             - DNI=1005

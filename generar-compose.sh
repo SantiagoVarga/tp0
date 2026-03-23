@@ -49,7 +49,7 @@ for i in $(seq 1 "$NUM_CLIENTS"); do
             - BIRTHDAY=1990-01-01
             - NUMBER=$((100 + i))
         networks:
-            - testing_net 
+            - testing_net
         depends_on:
             - server
         volumes:
