@@ -89,16 +89,30 @@ func (c *Client) StartClientLoop() {
 		time.Sleep(c.config.LoopPeriod)
 	}
 
+	_, _ = c.protocol.NotifyDone(c.config.ID)
+
+	c.CloseResources()
+
 	for {
+		for {
+			if err := c.createClientSocket(); err == nil {
+				break
+			}
+			time.Sleep(150 * time.Millisecond)
+		}
+
 		wr, err := c.protocol.RequestWinners(c.config.ID)
+		c.CloseResources()
+
 		if err != nil {
-			log.Errorf("action: consulta_ganadores | result: fail | error: %v", err)
-			return
+			time.Sleep(200 * time.Millisecond)
+			continue
 		}
 		if !wr.Ready {
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
+
 		log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", wr.Count)
 		return
 	}

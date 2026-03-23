@@ -6,6 +6,7 @@ services:
         entrypoint: python3 /main.py
         environment:
             - PYTHONUNBUFFERED=1
+            - AGENCIES_COUNT=5
         networks:
             - testing_net
         volumes:
@@ -28,6 +29,78 @@ services:
         volumes:
             - ./client/config.yaml:/config.yaml
             - ./.data/agency-1.csv:/data/agency-1.csv
+    client2:
+        container_name: client2
+        image: client:latest
+        entrypoint: /client
+        environment:
+            - CLI_ID=2
+            - NAME=name2
+            - SURNAME=surname2
+            - DNI=1002
+            - BIRTHDAY=1990-01-01
+            - NUMBER=102
+        networks:
+            - testing_net 
+        depends_on:
+            - server
+        volumes:
+            - ./client/config.yaml:/config.yaml
+            - ./.data/agency-2.csv:/data/agency-2.csv
+    client3:
+        container_name: client3
+        image: client:latest
+        entrypoint: /client
+        environment:
+            - CLI_ID=3
+            - NAME=name3
+            - SURNAME=surname3
+            - DNI=1003
+            - BIRTHDAY=1990-01-01
+            - NUMBER=103
+        networks:
+            - testing_net 
+        depends_on:
+            - server
+        volumes:
+            - ./client/config.yaml:/config.yaml
+            - ./.data/agency-3.csv:/data/agency-3.csv
+    client4:
+        container_name: client4
+        image: client:latest
+        entrypoint: /client
+        environment:
+            - CLI_ID=4
+            - NAME=name4
+            - SURNAME=surname4
+            - DNI=1004
+            - BIRTHDAY=1990-01-01
+            - NUMBER=104
+        networks:
+            - testing_net 
+        depends_on:
+            - server
+        volumes:
+            - ./client/config.yaml:/config.yaml
+            - ./.data/agency-4.csv:/data/agency-4.csv
+    client5:
+        container_name: client5
+        image: client:latest
+        entrypoint: /client
+        environment:
+            - CLI_ID=5
+            - NAME=name5
+            - SURNAME=surname5
+            - DNI=1005
+            - BIRTHDAY=1990-01-01
+            - NUMBER=105
+        networks:
+            - testing_net 
+        depends_on:
+            - server
+        volumes:
+            - ./client/config.yaml:/config.yaml
+            - ./.data/agency-5.csv:/data/agency-5.csv
 networks:
     testing_net:
         ipam:
