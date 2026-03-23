@@ -25,7 +25,7 @@ services:
             - BIRTHDAY=1990-01-01
             - NUMBER=101
         networks:
-            - testing_net 
+            - testing_net
         depends_on:
             - server
         volumes:
@@ -44,7 +44,7 @@ services:
             - BIRTHDAY=1990-01-01
             - NUMBER=102
         networks:
-            - testing_net 
+            - testing_net
         depends_on:
             - server
         volumes:
@@ -63,7 +63,7 @@ services:
             - BIRTHDAY=1990-01-01
             - NUMBER=103
         networks:
-            - testing_net 
+            - testing_net
         depends_on:
             - server
         volumes:
@@ -82,7 +82,7 @@ services:
             - BIRTHDAY=1990-01-01
             - NUMBER=104
         networks:
-            - testing_net 
+            - testing_net
         depends_on:
             - server
         volumes:
@@ -101,7 +101,7 @@ services:
             - BIRTHDAY=1990-01-01
             - NUMBER=105
         networks:
-            - testing_net 
+            - testing_net
         depends_on:
             - server
         volumes:
