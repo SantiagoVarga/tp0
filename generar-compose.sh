@@ -12,6 +12,8 @@ if [[ -z "$OUTFILE" || -z "$NUM_CLIENTS" ]]; then
 	exit 1
 fi
 
+SERVER_IP="172.25.125.2"
+SUBNET="172.25.125.0/24"
 
 cat > "$OUTFILE" <<EOF
 name: tp0
@@ -24,7 +26,8 @@ services:
             - PYTHONUNBUFFERED=1
             - AGENCIES_COUNT=$NUM_CLIENTS
         networks:
-            - testing_net
+          testing_net:
+            ipv4_address: $SERVER_IP
         volumes:
             - ./server/config.ini:/config.ini
 EOF
@@ -39,6 +42,7 @@ for i in $(seq 1 "$NUM_CLIENTS"); do
         entrypoint: /client
         environment:
             - CLI_ID=$i
+            - CLI_SERVER_IP=${SERVER_IP}:12345
             - NAME=name$i
             - SURNAME=surname$i
             - DNI=$((1000 + i))
@@ -61,7 +65,7 @@ networks:
         ipam:
             driver: default
             config:
-               - subnet: 172.25.125.0/24
+               - subnet: ${SUBNET}
 EOF
 
 echo "compose en $OUTFILE generado con $NUM_CLIENTS clientes."
