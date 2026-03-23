@@ -42,7 +42,7 @@ for i in $(seq 1 "$NUM_CLIENTS"); do
         entrypoint: /client
         environment:
             - CLI_ID=$i
-            - CLI_SERVER_IP=${SERVER_IP}:12345
+            - CLI_SERVER_ADDRESS=${SERVER_IP}:12345
             - NAME=name$i
             - SURNAME=surname$i
             - DNI=$((1000 + i))
