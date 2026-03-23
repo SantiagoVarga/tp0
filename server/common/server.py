@@ -25,6 +25,9 @@ class Server:
         self._drawing_in_progress = False
         self._winners_by_agency = {}
 
+        self._lock = threading.Lock()
+        self._draw_cv = threading.Condition(self._lock)
+
         # Thread pool (evita 1 thread ilimitado por cliente)
         workers = int(os.getenv("SERVER_WORKERS", "32"))
         self._executor = ThreadPoolExecutor(max_workers=workers)
