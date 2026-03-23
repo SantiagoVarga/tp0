@@ -1,6 +1,8 @@
 import logging
 import socket
 import struct
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 from .utils import Bet, store_bets, load_bets, has_won
 import os
@@ -17,18 +19,27 @@ class Server:
         if self._required_agencies <= 0:
             logging.warning("action: config | result: fail | error: AGENCIES_COUNT missing/invalid")
 
-        # Estado del sorteo (secuencial)
+       
         self._done_agencies = set()
         self._draw_done = False
+        self._drawing_in_progress = False
         self._winners_by_agency = {}
+
+        # Thread pool (evita 1 thread ilimitado por cliente)
+        workers = int(os.getenv("SERVER_WORKERS", "32"))
+        self._executor = ThreadPoolExecutor(max_workers=workers)
+
 
 
     def run(self):
         while True:
             client_sock = self.__accept_new_connection()
-            self.__handle_client_connection(client_sock)
-
+            self._executor.submit(self.__handle_client_connection, client_sock)
     def close_resources(self):
+        try:
+            self._executor.shutdown(wait=False, cancel_futures=True)
+        except Exception:
+            pass
         try:
             self._server_socket.close()
         except Exception:
@@ -72,48 +83,76 @@ class Server:
                 pass
 
     def process_done(self, message: str) -> str:
-        # DONE/{agencyId}
         parts = message.split("/")
         if len(parts) != 2:
             return "RESPONSE/FAIL/DONE"
 
         agency_id = parts[1]
-        self._done_agencies.add(agency_id)
 
-        # Ejecuta sorteo SOLO cuando llegaron todas las DONE esperadas
-        if (
-            (not self._draw_done)
-            and (self._required_agencies > 0)
-            and (len(self._done_agencies) >= self._required_agencies)
-        ):
+        # 1) Actualizar estado de DONE bajo lock
+        should_draw = False
+        with self._draw_cv:
+            self._done_agencies.add(agency_id)
+
+            # Si ya se sorteó, nada más que hacer
+            if self._draw_done:
+                return "RESPONSE/SUCCESS/DONE"
+
+            # Si falta config, no podemos decidir “cuándo” sortear
+            if self._required_agencies <= 0:
+                return "RESPONSE/SUCCESS/DONE"
+
+            # Si ya hay sorteo en curso, no disparar otro
+            if self._drawing_in_progress:
+                return "RESPONSE/SUCCESS/DONE"
+
+            # Condición de disparo (solo un hilo la toma)
+            if len(self._done_agencies) >= self._required_agencies:
+                self._drawing_in_progress = True
+                should_draw = True
+
+        # 2) Computar ganadores FUERA del lock (evita bloquear WINNERS y otros DONE)
+        if should_draw:
             winners = {}
             for bet in load_bets():
                 if has_won(bet):
                     key = str(bet.agency)
                     winners.setdefault(key, []).append(str(bet.document))
 
-            self._winners_by_agency = winners
-            self._draw_done = True
-            logging.info("action: sorteo | result: success")
+            # 3) Publicar resultado del sorteo de forma atómica y despertar a los que esperen
+            with self._draw_cv:
+                # doble chequeo (por seguridad ante estados raros)
+                if not self._draw_done:
+                    self._winners_by_agency = winners
+                    self._draw_done = True
+                    logging.info("action: sorteo | result: success")
+
+                self._drawing_in_progress = False
+                self._draw_cv.notify_all()
 
         return "RESPONSE/SUCCESS/DONE"
 
     def process_winners(self, message: str) -> str:
-        # WINNERS/{agencyId}
         parts = message.split("/")
         if len(parts) != 2:
             return "RESPONSE/FAIL/WINNERS"
 
         agency_id = parts[1]
 
-        if not self._draw_done:
-            return "RESPONSE/NOT_READY/WINNERS"
+        # Si el sorteo está en curso, esperar a que termine (sin busy-wait)
+        with self._draw_cv:
+            while self._drawing_in_progress:
+                self._draw_cv.wait()
 
-        dnis = self._winners_by_agency.get(agency_id, [])
+            if not self._draw_done:
+                return "RESPONSE/NOT_READY/WINNERS"
+
+            dnis = self._winners_by_agency.get(agency_id, [])
+
         resp = f"RESPONSE/SUCCESS/WINNERS/{len(dnis)}"
         for dni in dnis:
             resp += f"/{dni}"
-        return resp 
+        return resp
 
     def process_bet(self, message: str):
         """
