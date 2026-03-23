@@ -27,7 +27,7 @@ services:
             - AGENCIES_COUNT=$NUM_CLIENTS
         networks:
           testing_net:
-            ipv4_address: $SERVER_IP
+            ipv4_address: ${SERVER_IP}
         volumes:
             - ./server/config.ini:/config.ini
 EOF
