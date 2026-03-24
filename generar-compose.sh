@@ -1,6 +1,4 @@
 #!/bin/bash
-# Script para generar un archivo Docker Compose con cantidad configurable de clientes
-# Uso: ./generar-compose.sh <archivo_salida> <cantidad_clientes>
 
 set -e
 
