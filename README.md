@@ -108,6 +108,45 @@ El script deberá ubicarse en la raíz del proyecto. Netcat no debe ser instalad
 ### Ejercicio N°4:
 Modificar servidor y cliente para que ambos sistemas terminen de forma _graceful_ al recibir la signal SIGTERM. Terminar la aplicación de forma _graceful_ implica que todos los _file descriptors_ (entre los que se encuentran archivos, sockets, threads y procesos) deben cerrarse correctamente antes que el thread de la aplicación principal muera. Loguear mensajes en el cierre de cada recurso (hint: Verificar que hace el flag `-t` utilizado en el comando `docker compose down`).
 
+### Resolucion - Ejercicio N°4 (Graceful Shutdown)
+
+
+### Servidor (server.py y main.py)
+
+**Manejo de SIGTERM:**
+- En `main.py`, se registra un handler para la señal SIGTERM mediante `signal.signal(signal.SIGTERM, graceful_shutdown)`
+- Al recibir SIGTERM (por ejemplo, con `docker compose down -t ...`), se ejecuta `graceful_shutdown`, que:
+    - Invoca `server.close_resources()` para cerrar el socket del servidor
+    - Loguea el cierre de recursos y finaliza el proceso de forma controlada
+
+![Server](img/ej4-server.png)
+
+**Cierre de recursos:**
+- El método `close_resources()` de la clase `Server` cierra el socket y loguea tanto el intento como el resultado (éxito o error)
+
+![ServerClose](img/ej4-svClose.png)
+
+### Cliente (main.go y client.go)
+
+**Manejo de SIGTERM:**
+- En `main.go`, se registra un handler para SIGTERM usando el paquete `os/signal`
+- Al recibir SIGTERM, el handler:
+    - Invoca `client.CloseResources()` para cerrar la conexión si está abierta
+    - Loguea el cierre de recursos y finaliza el proceso de forma controlada
+
+![Client](img/ej4-client.png)
+
+**Cierre de recursos:**
+- El método `CloseResources()` de la clase `Client` verifica si la conexión está abierta, la cierra y loguea el resultado
+
+![ClientClose](img/ej4-cliClose.png)
+
+### Flag `-t` en docker compose down
+
+El flag `-t` (o `--timeout`) especifica cuántos segundos Docker espera después de enviar SIGTERM a los contenedores antes de forzar el cierre con SIGKILL. Esto permite que la aplicación realice un cierre graceful: liberar recursos, cerrar sockets, guardar estado, etc.
+
+Ejemplo: `docker compose down -t 10` envía SIGTERM y espera hasta 10 segundos antes de terminar forzadamente si el proceso no finalizó.
+
 ## Parte 2: Repaso de Comunicaciones
 
 Las secciones de repaso del trabajo práctico plantean un caso de uso denominado **Lotería Nacional**. Para la resolución de las mismas deberá utilizarse como base el código fuente provisto en la primera parte, con las modificaciones agregadas en el ejercicio 4.
