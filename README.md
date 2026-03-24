@@ -96,6 +96,23 @@ En el archivo de Docker Compose de salida se pueden definir volúmenes, variable
 ### Ejercicio N°2:
 Modificar el cliente y el servidor para lograr que realizar cambios en el archivo de configuración no requiera reconstruír las imágenes de Docker para que los mismos sean efectivos. La configuración a través del archivo correspondiente (`config.ini` y `config.yaml`, dependiendo de la aplicación) debe ser inyectada en el container y persistida por fuera de la imagen (hint: `docker volumes`).
 
+## Resolucion - Ejercicio N°2 (volumenes)
+
+Para este ejercicio, se modificó el script `generar-compose.sh` para que el archivo de Docker Compose generado incluya la definición de volúmenes en los servicios de cliente y servidor. Esto permite que los archivos de configuración (`config.yaml` para el cliente y `config.ini` para el servidor) sean montados desde el host dentro de los contenedores, en lugar de estar embebidos en la imagen.
+
+
+### Server
+![Server](img/ej2-server.png)
+
+### Client
+
+![Client](img/ej2-client.png)
+
+### ¿Por qué es importante?
+
+- Permite modificar la configuración de cliente o servidor sin necesidad de reconstruir la imagen Docker cada vez que se cambia un parámetro.
+- Cumple con la buena práctica de separar la configuración del código y la imagen, haciendo el sistema más flexible y portable.
+
 
 ### Ejercicio N°3:
 Crear un script de bash `validar-echo-server.sh` que permita verificar el correcto funcionamiento del servidor utilizando el comando `netcat` para interactuar con el mismo. Dado que el servidor es un echo server, se debe enviar un mensaje al servidor y esperar recibir el mismo mensaje enviado.
