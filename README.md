@@ -105,6 +105,56 @@ En caso de que la validación sea exitosa imprimir: `action: test_echo_server | 
 El script deberá ubicarse en la raíz del proyecto. Netcat no debe ser instalado en la máquina _host_ y no se pueden exponer puertos del servidor para realizar la comunicación (hint: `docker network`). `
 
 
+### Resolucion - Ejercicio N°3 (validacion)
+
+## Resolución - Ejercicio N°3 (validación)
+
+Se creó el script `validar-echo-server.sh` en la raíz del proyecto que permite verificar el correcto funcionamiento del servidor echo mediante `netcat`, sin instalar herramientas adicionales en el host ni exponer puertos.
+
+### Estrategia de validación
+
+El script utiliza un contenedor temporal de Alpine Linux para ejecutar `netcat` (nc) y así interactuar con el servidor a través de la red interna de Docker Compose. De esta forma, se evita la instalación de dependencias en el host y se aprovechan los mecanismos de networking nativos de Docker.
+
+### Paso 1: Definición del mensaje de prueba
+
+
+El script genera un mensaje único utilizando timestamp para evitar falsos positivos:
+
+![Test](img/ej3-msj.png)
+
+### Paso 2: Configuración de red y destino
+
+
+
+Define la red de Docker Compose, el nombre del servicio del servidor y el puerto:
+
+![Network](img/ej3-net.png)
+
+### Paso 3: Ejecución de netcat en contenedor temporal
+
+
+Utiliza `docker run --rm --network` para lanzar un contenedor Alpine efímero que ejecute `netcat`:
+
+![NetCat](img/ej3-netcat.png)
+
+Este enfoque:
+- Lanza un contenedor Alpine temporal
+- Ejecuta `nc` conectado a la red interna de Docker
+- Envía el mensaje al servidor y captura la respuesta
+- No instala `netcat` en el host
+- No expone puertos
+
+Luego, compara la respuesta recibida con el mensaje enviado.
+
+
+
+### Resultado
+
+- **Éxito**: `action: test_echo_server | result: success`
+- **Fallo**: `action: test_echo_server | result: fail`
+
+
+
 ### Ejercicio N°4:
 Modificar servidor y cliente para que ambos sistemas terminen de forma _graceful_ al recibir la signal SIGTERM. Terminar la aplicación de forma _graceful_ implica que todos los _file descriptors_ (entre los que se encuentran archivos, sockets, threads y procesos) deben cerrarse correctamente antes que el thread de la aplicación principal muera. Loguear mensajes en el cierre de cada recurso (hint: Verificar que hace el flag `-t` utilizado en el comando `docker compose down`).
 
