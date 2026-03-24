@@ -23,8 +23,7 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
+        
         while self._running:
             client_sock = self.__accept_new_connection()
             addr = client_sock.getpeername()
