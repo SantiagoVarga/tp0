@@ -114,13 +114,13 @@ El script toma el nombre del archivo de salida y la cantidad de clientes como ar
 
 ### 2) Sección inicial del Compose (`server`)
 
-Se escribe la sección base del archivo Compose, definiendo el server con su imagen, entrypoint, variables de entorno, red y volumen de configuración.
+Se escribe la sección base del archivo Compose, definiendo el server con su imagen, entrypoint, variables de entorno y red.
 
 ![Sección server](img/generar-compose-server.png)
 
 ### 3) Generación dinámica de clientes (`client1..clientN`)
 
-Se utiliza un bucle para agregar al archivo un bloque por cada cliente (client1, client2, ...), configurando nombre, imagen, entrypoint, variable de entorno CLI_ID, red, dependencia del server y volumen de configuración.
+Se utiliza un bucle para agregar al archivo un bloque por cada cliente (client1, client2, ...), configurando nombre, imagen, entrypoint, variable de entorno CLI_ID, red y dependencia del server.
 
 ![Loop de clientes](img/generar-compose-clients.png)
 
@@ -129,6 +129,8 @@ Se utiliza un bucle para agregar al archivo un bloque por cada cliente (client1,
 Al final, se agrega la definición de la red testing_net con su configuración de subnet, permitiendo la comunicación entre todos los servicios del Compose.
 
 ![Networks](img/generar-compose-nets.png)
+
+Como aclaracion: se visualiza en las capturas los `volumes` requeridos en el Ejercicio N2 porque se realizaron ambos ejercicios de manera casi consecutiva. Igualmente se encuentra realizado cada uno en su respectiva rama del repositorio.
 
 ### Resultado final luego de ejecutar 5 clientes:
 
