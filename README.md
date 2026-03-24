@@ -93,8 +93,51 @@ python3 mi-generador.py $1 $2
 
 En el archivo de Docker Compose de salida se pueden definir volúmenes, variables de entorno y redes con libertad, pero recordar actualizar este script cuando se modifiquen tales definiciones en los sucesivos ejercicios.
 
+
+## Resolución - Ejercicio N°1 (generación dinámica de Docker Compose)
+
+
+
+Se implementó el script **`generar-compose.sh`** en la raíz del proyecto para generar un Docker Compose con una cantidad configurable de clientes (`client1..clientN`).
+
+### Uso
+```bash
+./generar-compose.sh docker-compose-dev.yaml <cantidad_clientes>
+```
+
+
+### 1) Lectura de argumentos y validación
+
+El script toma el nombre del archivo de salida y la cantidad de clientes como argumentos. Si falta alguno, muestra un mensaje de uso y termina.
+
+![Args y validación](img/generar-compose-args.png)
+
+### 2) Sección inicial del Compose (`server`)
+
+Se escribe la sección base del archivo Compose, definiendo el server con su imagen, entrypoint, variables de entorno, red y volumen de configuración.
+
+![Sección server](img/generar-compose-server.png)
+
+### 3) Generación dinámica de clientes (`client1..clientN`)
+
+Se utiliza un bucle para agregar al archivo un bloque por cada cliente (client1, client2, ...), configurando nombre, imagen, entrypoint, variable de entorno CLI_ID, red, dependencia del server y volumen de configuración.
+
+![Loop de clientes](img/generar-compose-clients.png)
+
+### 4) Definición de red compartida (`testing_net`)
+
+Al final, se agrega la definición de la red testing_net con su configuración de subnet, permitiendo la comunicación entre todos los servicios del Compose.
+
+![Networks](img/generar-compose-nets.png)
+
+### Resultado final luego de ejecutar 5 clientes:
+
+![Result](img/generar-compose-result1.png)
+![Result](img/generar-compose-result2.png)
+
+
 ### Ejercicio N°2:
-Modificar el cliente y el servidor para lograr que realizar cambios en el archivo de configuración no requiera reconstruír las imágenes de Docker para que los mismos sean efectivos. La configuración a través del archivo correspondiente (`config.ini` y `config.yaml`, dependiendo de la aplicación) debe ser inyectada en el container y persistida por fuera de la imagen (hint: `docker volumes`).
+Modificar el cliente y el servidor para lograr que realizar cambios en el archivo de configuración no requiera reconstruír las imágenes de Docker para que los mismos sean eat fectivos. La configuración a través del archivo correspondiente (`config.ini` y `config.yaml`, dependiendo de la aplicación) debe ser inyectada en el container y persistida por fuera de la imagen (hint: `docker volumes`).
 
 
 ### Ejercicio N°3:
