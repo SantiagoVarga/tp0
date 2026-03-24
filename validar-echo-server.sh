@@ -1,6 +1,5 @@
 #!/bin/bash
-# Script para validar el funcionamiento del echo server usando netcat en un contenedor temporal
-# Uso: ./validar-echo-server.sh
+
 
 # Mensaje de prueba
 TEST_MSG="echo_test_$(date +%s)"
