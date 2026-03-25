@@ -80,7 +80,7 @@ func (c *Client) StartClientLoop() {
 			continue
 		}
 
-		if c.handleServerResponse(response, batchSize) {
+		if c.handleServerResponse(response) {
 			log.Infof("action: apuesta_enviada | result: success | cantidad: %d", batchSize)
 		} else {
 			log.Errorf("action: apuesta_enviada | result: fail | cantidad: %d", batchSize)
@@ -132,7 +132,7 @@ func (c *Client) CloseResources() {
 	}
 }
 
-func (c *Client) handleServerResponse(response string, batchSize int) bool {
+func (c *Client) handleServerResponse(response string) bool {
 	parts := strings.SplitN(response, "/", 3)
 	if len(parts) < 3 {
 		return false

@@ -172,7 +172,7 @@ class Server:
             # Éxito sólo si store_bets no falla para TODO el batch
             store_bets(bets)
 
-            # logs por apuesta almacenada (si tu enunciado/TP previo lo sigue pidiendo)
+            # logs por apuesta almacenada 
             for bet in bets:
                 logging.info(
                     f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}"
