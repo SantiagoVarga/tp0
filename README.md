@@ -147,6 +147,60 @@ La cantidad máxima de apuestas dentro de cada _batch_ debe ser configurable des
 
 Por su parte, el servidor deberá responder con éxito solamente si todas las apuestas del _batch_ fueron procesadas correctamente.
 
+### Resolucion - Ejercicio N°6 (batches)
+En esta branch se realizaron los siguientes cambios para cumplir con el enunciado del Ejercicio 6, que introduce el procesamiento de apuestas en modalidad **batch** (por chunks):
+
+#### 1. Estructuras y lógica de batch
+
+- **Cliente:**  
+  - Se agregó una estructura para representar un batch de apuestas (`[]BatchConfig` en Go).
+  ![Extracto: BatchConfig](img/ej6-BatchConfig.png)
+  - El cliente ahora lee todas las apuestas desde el archivo `.data/agency-{N}.csv` (inyectado como volumen) y las agrupa en batches de tamaño configurable.
+  
+  ![Extracto: CliBatch](img/ej6-CliBatch.png)
+  
+ 
+
+- **Servidor:**  
+  - Se agregó lógica para recibir, deserializar y procesar batches completos de apuestas.
+  - El servidor procesa todas las apuestas del batch y responde con éxito solo si todas fueron almacenadas correctamente.
+  - Si alguna apuesta falla, responde con error y loguea el resultado.
+      ![Extracto: server.py - process_batch](img/ej6-processBatch.png)
+     
+
+---
+#### 2. Protocolo
+
+ 
+  - Se extendió el protocolo para soportar mensajes tipo `BET/BATCH/{cantidad}/{apuesta1}/.../{apuestaN}`.
+  - El framing y la serialización siguen usando el prefijo de longitud para evitar short-read/write.
+    - Cliente:  
+      ![Extracto: comm.go - framing batch](img/ej6-CliBatch.png)
+    - Servidor:
+       ![Extracto: server.py - log batch](img/ej6-recvBatch.png)
+    
+- **Configuración:**  
+  El tamaño máximo de batch ahora es configurable y se valida para no superar los 8kB.
+
+    ![Extracto: BatchConfig](img/ej6-Config.png)
+
+- **Volúmenes:**  
+  - Los archivos de apuestas `.data/agency-{N}.csv` se montan como volúmenes en cada contenedor cliente, permitiendo la ingesta dinámica de datos sin reconstruir la imagen.
+
+---
+
+#### 3. Impacto en el sistema
+
+- **Eficiencia:**  
+  - El envío de apuestas en batch reduce la cantidad de mensajes y mejora la eficiencia de la transmisión y el procesamiento.
+- **Atomicidad:**  
+  - El servidor garantiza que solo responde con éxito si **todas** las apuestas del batch fueron procesadas correctamente.
+- **Flexibilidad:**  
+  - El sistema ahora soporta tanto apuestas individuales como en batch, y el tamaño del batch es configurable.
+
+---
+
+
 ### Ejercicio N°7:
 
 Modificar los clientes para que notifiquen al servidor al finalizar con el envío de todas las apuestas y así proceder con el sorteo.
