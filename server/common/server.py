@@ -124,7 +124,7 @@ class Server:
 
             # 3) Publicar resultado del sorteo de forma atómica y despertar a los que esperen
             with self._draw_cv:
-                # doble chequeo (por seguridad ante estados raros)
+                # doble chequeo 
                 if not self._draw_done:
                     self._winners_by_agency = winners
                     self._draw_done = True
@@ -214,7 +214,7 @@ class Server:
             # Éxito sólo si store_bets no falla para TODO el batch
             store_bets(bets)
 
-            # logs por apuesta almacenada (si tu enunciado/TP previo lo sigue pidiendo)
+            # logs por apuesta almacenada 
             for bet in bets:
                 logging.info(
                     f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}"
