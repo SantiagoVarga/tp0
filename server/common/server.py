@@ -39,7 +39,7 @@ class Server:
                         f"action: apuesta_recibida | result: {'success' if ok else 'fail'} | cantidad: {cantidad}"
                     )
                 else:
-                    # individual bet (optional for ej6, but keeps compatibility)
+                    # apuesta individual
                     response, _dni, _num, ok = self.process_bet(msg)
                     logging.info(
                         f"action: apuesta_recibida | result: {'success' if ok else 'fail'} | cantidad: 1"
@@ -112,7 +112,7 @@ class Server:
             # Éxito sólo si store_bets no falla para TODO el batch
             store_bets(bets)
 
-            # logs por apuesta almacenada (si tu enunciado/TP previo lo sigue pidiendo)
+            # logs por apuesta almacenada
             for bet in bets:
                 logging.info(
                     f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}"
