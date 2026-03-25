@@ -134,6 +134,113 @@ Se deberá implementar un módulo de comunicación entre el cliente y el servido
 * Correcto empleo de sockets, incluyendo manejo de errores y evitando los fenómenos conocidos como [_short read y short write_](https://cs61.seas.harvard.edu/site/2018/FileDescriptors/).
 
 
+### Resolucion - Ejercicio N°5 (protocolo)
+ 
+A continuación se resumen los cambios realizados, la definición del protocolo, la separación de responsabilidades y el manejo robusto de la comunicación.
+
+---
+
+### 1. Cliente: envío de apuestas como agencia
+
+Primero, el cliente toma los datos de la apuesta (nombre, apellido, DNI, nacimiento, número) desde **variables de entorno**.
+
+![Extracto: EnvVar](img/ej5-envVar.png)
+
+Luego, estos datos se empaquetan en una estructura de dominio (`BetInfo`) y se serializan para ser enviados al servidor. Esta informacion se carga mediante `LoadBetInfo` en el archivo `model.go`.
+
+![Extracto: model.go](img/ej5-modelGO.png)
+
+Aqui tambine se encuentra el struct `ServerResponse`, para manejar la respuesta del servidor.
+
+
+
+ Al recibir confirmación, el cliente loguea:
+  ```
+  action: apuesta_enviada | result: success | dni: ${DNI} | numero: ${NUMERO}
+  ```
+
+
+---
+
+### 2. Servidor: recepción y almacenamiento de apuestas
+
+El servidor recibe los mensajes, los deserializa y almacena la apuesta usando la función provista `store_bets(...)`.
+
+
+![Extracto: server.py - process_bet](img/ej5-processBet.png)
+
+
+
+ Al persistir la apuesta, loguea:
+  ```
+  action: apuesta_almacenada | result: success | dni: ${DNI} | numero: ${NUMERO}
+  ```
+
+
+---
+
+#### 3. Protocolo de comunicación
+
+- **Formato del mensaje:**  
+  ```
+  BET/{agencia}/{nombre}/{apellido}/{dni}/{nacimiento}/{numero}
+  ```
+  Ejemplo:
+  ```
+  BET/1/Santiago/Lorca/30904465/1999-03-17/7574
+  ```
+- **Serialización:**  
+  - El mensaje se convierte a string UTF-8 y se envía precedido por 4 bytes (big-endian) que indican la longitud del mensaje.
+- **Respuesta:**  
+  ```
+  RESPONSE/SUCCESS/Apuesta almacenada
+  ```
+  o  
+  ```
+  RESPONSE/FAIL/Error al almacenar apuesta
+  ```
+ 
+  Cliente:  
+    ![Extracto: comm.go - framing y serialización](img/ej5-sendBet.png)
+    ![Extracto: comm.go - framing y serialización](img/ej5-recv.png)
+   Servidor:  
+    ![Extracto: server.py - framing y parsing](img/ej5-handleConn.png)
+
+
+---
+
+#### 4. Separación de responsabilidades
+
+- **Modelo de dominio:**  
+  - Cliente: estructura `BetInfo` (`model.go`)
+  - Servidor: clase `Bet` (`utils.py`)
+- **Capa de comunicación:**  
+  - Cliente: framing, serialización y parsing (`comm.go`)
+  - Servidor: framing y parsing (`server.py`)
+- **Negocio:**  
+  - Cliente: armado y envío de apuesta, log de resultado (`client.go`)
+  - Servidor: almacenamiento y log de apuesta (`server.py`)
+
+    - Apartado de ClientLoop:
+      ![Extracto: client.go](img/ej5-ClientLoop.png)
+
+---
+
+#### 5. Manejo robusto de sockets (short-read y short-write)
+
+- Se utiliza un **protocolo de framing** (longitud + mensaje) para saber exactamente cuántos bytes leer y escribir.
+- **Short-read:**  
+  - Función auxiliar que lee del socket hasta completar la cantidad de bytes esperada.
+    ![Extracto: server.py - _recv_all](img/ej5-recvall.png)
+- **Short-write:**  
+  - Uso de `sendall()` para garantizar el envío completo del mensaje.
+    ![Extracto: server.py - sendall](img/ej5-CliSend.png)
+
+---
+
+**Con estos cambios, el sistema cumple con el caso de uso de Lotería Nacional, separa correctamente responsabilidades, implementa un protocolo robusto y maneja correctamente la serialización y los sockets.**
+
+
 ### Ejercicio N°6:
 Modificar los clientes para que envíen varias apuestas a la vez (modalidad conocida como procesamiento por _chunks_ o _batchs_). 
 Los _batchs_ permiten que el cliente registre varias apuestas en una misma consulta, acortando tiempos de transmisión y procesamiento.
